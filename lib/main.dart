@@ -31,6 +31,7 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   bool _showNav = true;
+  bool? _lastHeightWasSmall;
   int _selectedPageIndex = 0;
 
   final List<Widget> _pages = [
@@ -41,7 +42,23 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    bool isLargeScreen = MediaQuery.of(context).size.width > 1200;
+    double screenHeight = MediaQuery.of(context).size.height;
+    double screenWidth = MediaQuery.of(context).size.width;
+
+    bool isLargeWidth = screenWidth > 1200;
+    bool isSmallHeightNow = screenHeight < 400;
+
+    if (_lastHeightWasSmall != isSmallHeightNow) {
+      _lastHeightWasSmall = isSmallHeightNow;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _showNav = !isSmallHeightNow;
+        });
+      });
+    }
+
+    bool shouldShowBar = isLargeWidth || _showNav;
 
     return Scaffold(
       body: Center(
@@ -50,7 +67,7 @@ class _MainNavigationState extends State<MainNavigation> {
           child: _pages[_selectedPageIndex],
         ),
       ),
-      bottomNavigationBar: (isLargeScreen || _showNav)
+      bottomNavigationBar: shouldShowBar
           ? Center(
               heightFactor: 1,
               child: ConstrainedBox(
@@ -80,31 +97,21 @@ class _MainNavigationState extends State<MainNavigation> {
               ),
             )
           : null,
-      floatingActionButton: isLargeScreen
+      floatingActionButton: isLargeWidth
           ? null
-          : (_showNav
-                ? FloatingActionButton(
-                    onPressed: () {
-                      setState(() {
-                        _showNav = false;
-                      });
-                    },
-                    child: const Icon(
-                      Icons.keyboard_arrow_down,
-                      color: Colors.purple,
-                    ),
-                  )
-                : FloatingActionButton(
-                    onPressed: () {
-                      setState(() {
-                        _showNav = true;
-                      });
-                    },
-                    child: const Icon(
-                      Icons.keyboard_arrow_up,
-                      color: Colors.purple,
-                    ),
-                  )),
+          : FloatingActionButton(
+              onPressed: () {
+                setState(() {
+                  _showNav = !_showNav;
+                });
+              },
+              child: Icon(
+                (shouldShowBar)
+                    ? Icons.keyboard_arrow_down
+                    : Icons.keyboard_arrow_up,
+                color: Colors.purple,
+              ),
+            ),
     );
   }
 }
